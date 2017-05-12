@@ -1,0 +1,80 @@
+version: '2'
+
+services:
+  nginx-proxy:
+    restart: always
+    image: jwilder/nginx-proxy
+    ports:
+      - '80:80'
+      - '443:443'
+    network_mode: 'bridge'
+    volumes:
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+      - ./nginx/proxy.conf:/etc/nginx/proxy.conf:ro
+  db:
+    restart: always
+    image: mysql
+    ports:
+      - 3306:3306
+    environment:
+      - "MYSQL_ROOT_PASSWORD=root"
+      - "MYSQL_USER=fmatrion"
+      - "MYSQL_PASSWORD=essai"
+      - "MYSQL_DATABASE=fmatrion"
+    network_mode: 'bridge'
+    volumes:
+      - db:/var/lib/mysql:rw
+    #  - default
+    dns_search:
+      - db
+    container_name: docker_db
+  pma:
+    restart: always
+    image: phpmyadmin/phpmyadmin
+    links:
+      - db
+    ports:
+      - 8080:80
+    environment:
+      - PMA_HOST=db
+      - PMA_PORT=3306
+      - VIRTUAL_HOST=pma.docker
+    #networks:
+    #  - default
+    dns_search:
+      - pma
+    container_name: docker_pma
+    network_mode: 'bridge'
+
+  maildev:
+    restart: always
+    image: djfarrelly/maildev
+    ports:
+      - 80
+    #networks:
+    #  - default
+    environment:
+      VIRTUAL_HOST: maildev.docker
+    dns_search:
+      - maildev
+    container_name: docker_maildev
+    network_mode: 'bridge'
+
+  blackfire:
+    restart: always
+    image: blackfire/blackfire
+    ports:
+      - "8707:8707"
+      # - 8707
+    environment:
+      # Exposes the host BLACKFIRE_SERVER_ID and TOKEN environment variables.
+      # - BLACKFIRE_SERVER_ID
+      # - BLACKFIRE_SERVER_TOKEN
+      # You can also use global environment credentials :
+      BLACKFIRE_SERVER_ID: cd51bbd0-1cda-4df5-be2f-c0b15989606e
+      BLACKFIRE_SERVER_TOKEN: 538fba5eccbba837bfd3e7a804cba41ab6a25b014eff93dcc75d91d4049fd7ff
+      BLACKFIRE_LOG_LEVEL: 4
+    container_name: docker_blackfire
+    network_mode: 'bridge'
+volumes:
+  db: {}

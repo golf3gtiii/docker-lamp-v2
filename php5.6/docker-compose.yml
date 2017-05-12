@@ -1,0 +1,29 @@
+version: '2'
+
+services:
+  front:
+    restart: always
+    build: ./docker/engine/
+    ports:
+      - 80
+    external_links:
+      - docker_db:db
+      - docker_maildev:maildev
+      - docker_blackfire:blackfire
+    volumes_from:
+      - unison
+    volumes:
+      - ./docker/engine/php.ini:/usr/local/etc/php/conf.d/custom.ini:ro
+      - ./docker/front/apache.conf:/etc/apache2/conf-enabled/custom.conf:ro
+      - ./docker/maildev/ssmtp.conf:/etc/ssmtp/ssmtp.conf:ro
+    environment:
+      VIRTUAL_HOST: php56.docker
+    network_mode: 'bridge'
+  unison:
+    image: leighmcculloch/unison:latest
+    environment:
+      - UNISON_WORKING_DIR=/home/docker/www
+    volumes:
+      - /home/docker/www
+    ports:
+      - 5000
